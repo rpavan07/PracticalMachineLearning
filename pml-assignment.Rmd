@@ -1,0 +1,65 @@
+---
+title: 'Peer-graded Assignment: Prediction Assignment Writeup'
+author: "Pavan"
+date: "10/18/2020"
+output: html_document
+---
+
+```{r}
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+```
+
+# Getting the data
+```{r}
+training <- read.csv("G://Notes//Sem - 7//Data Science//pml-training.csv")
+testing <- read.csv("G://Notes//Sem - 7//Data Science//pml-testing.csv")
+```
+
+# Cleaning the data
+```{r}
+features <- names(testing[,colSums(is.na(testing)) == 0])[8:59]
+trainclasse <- training[,c(features,"classe")]
+testproblem <- testing[,c(features,"problem_id")]
+```
+
+# Partitioning
+```{r}
+inTrain <- createDataPartition(trainclasse$classe, p=0.7, list = FALSE)
+TrainingCase <- trainclasse[inTrain,]
+TestingCase <- trainclasse[-inTrain,]
+```
+
+# Tree Prediction
+```{r}
+DTmodel <- rpart(classe ~ ., data = TrainingCase, method = "class")
+fancyRpartPlot(DTmodel)
+DTpredict <- predict(DTmodel, TestingCase, type = "class")
+confusionMatrix(DTpredict, TestingCase$classe)
+```
+
+# Random Forest Prediction
+```{r}
+RandomForestmodel <- randomForest(classe ~ ., data = TrainingCase)
+RandomForestpredict <- predict(RandomForestmodel, TestingCase, type = "class")
+confusionMatrix(RandomForestpredict, TestingCase$classe)
+```
+
+# Therefore, the accuracy is at 99.3%.
+
+# We now use the random forest model
+```{r}
+FinalPrediction <- predict(RandomForestmodel, testing, type = "class")
+FinalPrediction
+pml_write_files = function(x){
+    n = length(x)
+    for(i in 1:n){
+        filename = paste0("problem_id_",i,".txt")
+        write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+    }
+}
+pml_write_files(FinalPrediction)
+```
