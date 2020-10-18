@@ -1,0 +1,71 @@
+---
+title: 'Peer-graded Assignment: Prediction Assignment Writeup'
+author: "Pavan"
+date: "10/18/2020"
+output: html_document
+---
+
+```{r}
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+```
+
+# Getting the data
+```{r}
+training <- read.csv("G://Notes//Sem - 7//Data Science//pml-training.csv")
+testing <- read.csv("G://Notes//Sem - 7//Data Science//pml-testing.csv")
+```
+
+- Class A: exactly according to the specification  
+- Class B: elbows 
+- Class C: dumbbell lifting 
+- Class D: dumbbell lowering   
+- Class E: hips  
+
+# Cleaning the data
+```{r}
+features <- names(testing[,colSums(is.na(testing)) == 0])[8:59]
+trainproblem <- training[,c(features,"classe")]
+testproblem <- testing[,c(features,"problem_id")]
+```
+
+# Partitioning
+```{r}
+inTrain <- createDataPartition(trainproblem$classe, p=0.7, list = FALSE)
+TrainingCase <- trainproblem[inTrain,]
+TestingCase <- trainproblem[-inTrain,]
+```
+
+# Tree Prediction
+```{r}
+DTmodel <- rpart(classe ~ ., data = TrainingCase, method = "class")
+fancyRpartPlot(DTmodel)
+DTpredict <- predict(DTmodel, TestingCase, type = "class")
+confusionMatrix(DTpredict, TestingCase$classe)
+```
+
+# Random Forest Prediction
+```{r}
+RandomForestmodel <- randomForest(classe ~ ., data = TrainingCase)
+RandomForestpredict <- predict(RandomForestmodel, TestingCase, type = "class")
+confusionMatrix(RandomForestpredict, TestingCase$classe)
+```
+
+
+# Submission
+In this, submission are generated using the random forest algorithm.
+```{r}
+FinalPrediction <- predict(RandomForestmodel, testing, type = "class")
+FinalPrediction
+pml_write_files = function(x){
+    n = length(x)
+    for(i in 1:n){
+        filename = paste0("problem_id_",i,".txt")
+        write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+    }
+}
+pml_write_files(FinalPrediction)
+```
